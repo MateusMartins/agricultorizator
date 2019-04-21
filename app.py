@@ -34,7 +34,7 @@ def locations():
     if result > 0:
         return render_template('locations.html', locations=locations)
     else:
-        msg = 'No locations found'
+        msg = 'Nenhuma região cadastrada'
         return render_template('locations.html', msg=msg)
     # Close connection
     cur.close()
@@ -45,58 +45,23 @@ def location(id):
     # Create cursor
     cur = mysql.connection.cursor()
 
-    # Get article
+    # Get location
     _ = cur.execute("SELECT * FROM locations WHERE id = %s", [id])
 
     location = cur.fetchone()
 
     return render_template('location.html', location=location)
 
-# Articles
-@app.route('/articles')
-def articles():
-    # Create cursor
-    cur = mysql.connection.cursor()
-
-    # Get articles
-    result = cur.execute("SELECT * FROM articles")
-
-    articles = cur.fetchall()
-
-    if result > 0:
-        return render_template('articles.html', articles=articles)
-    else:
-        msg = 'No Articles Found'
-        return render_template('articles.html', msg=msg)
-    # Close connection
-    cur.close()
-
-
-#Single Article
-@app.route('/article/<string:id>/')
-def article(id):
-    # Create cursor
-    cur = mysql.connection.cursor()
-
-    # Get article
-    result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
-
-    article = cur.fetchone()
-
-    return render_template('article.html', article=article)
-
-
 # Register Form Class
 class RegisterForm(Form):
-    name = StringField('Name', [validators.Length(min=1, max=50)])
-    username = StringField('Username', [validators.Length(min=4, max=25)])
+    name = StringField('Nome', [validators.Length(min=1, max=50)])
+    username = StringField('Usuário', [validators.Length(min=4, max=25)])
     email = StringField('Email', [validators.Length(min=6, max=50)])
-    password = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords do not match')
+    password = PasswordField('Senha', [
+        validators.DataRequired('Senha'),
+        validators.EqualTo('confirm', message='Senhas não conferem')
     ])
-    confirm = PasswordField('Confirm Password')
-
+    confirm = PasswordField('Confirme sua senha')
 
 # User Register
 @app.route('/register', methods=['GET', 'POST'])
@@ -120,7 +85,7 @@ def register():
         # Close connection
         cur.close()
 
-        flash('You are now registered and can log in', 'success')
+        flash('Cadastro realizado com sucesso', 'success')
 
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
@@ -143,6 +108,7 @@ def login():
         if result > 0:
             # Get stored hash
             data = cur.fetchone()
+            name = data['name']
             password = data['password']
 
             # Compare Passwords
@@ -150,16 +116,17 @@ def login():
                 # Passed
                 session['logged_in'] = True
                 session['username'] = username
+                session['name'] = name
 
-                flash('You are now logged in', 'success')
+                flash('Login realizado com sucesso', 'success')
                 return redirect(url_for('dashboard_location'))
             else:
-                error = 'Invalid login'
+                error = 'Problema ao validar senha'
                 return render_template('login.html', error=error)
             # Close connection
             cur.close()
         else:
-            error = 'Username not found'
+            error = 'Usuário ou senha inválido'
             return render_template('login.html', error=error)
 
     return render_template('login.html')
@@ -171,7 +138,7 @@ def is_logged_in(f):
         if 'logged_in' in session:
             return f(*args, **kwargs)
         else:
-            flash('Unauthorized, Please login', 'danger')
+            flash('Acesso não autorizado, entre para acessar esta página', 'danger')
             return redirect(url_for('login'))
     return wrap
 
@@ -180,7 +147,7 @@ def is_logged_in(f):
 @is_logged_in
 def logout():
     session.clear()
-    flash('You are now logged out', 'success')
+    flash('Usuário deslogado com sucesso', 'success')
     return redirect(url_for('login'))
 
 # Dashboard_location
@@ -198,14 +165,15 @@ def dashboard_location():
     if result > 0:
         return render_template('dashboard_location.html', locations=locations)
     else:
-        msg = 'No locations Found'
+        msg = 'Nenhuma região cadastrada'
         return render_template('dashboard_location.html', msg=msg)
+    
     # Close connection
     cur.close()
 
 # Location Form Class
 class LocationForm(Form):
-    state = StringField('Estado', [validators.Length(min=1, max=200)])
+    state = StringField('Região', [validators.Length(min=1, max=200)])
     descricao = TextAreaField('Descrição', [validators.Length(min=30)])
 
 # Add Location
@@ -270,7 +238,7 @@ def edit_location(id):
         #Close connection
         cur.close()
 
-        flash('Location Updated', 'success')
+        flash('Região atualizada', 'success')
 
         return redirect(url_for('dashboard_location'))
 
@@ -285,7 +253,7 @@ def delete_location(id):
     cur = mysql.connection.cursor()
 
     # Execute
-    cur.execute("DELETE FROM location WHERE id = %s", [id])
+    cur.execute("DELETE FROM locations WHERE id = %s", [id])
 
     # Commit to DB
     mysql.connection.commit()
@@ -293,7 +261,7 @@ def delete_location(id):
     #Close connection
     cur.close()
 
-    flash('Location Deleted', 'success')
+    flash('Região deletada com sucesso', 'success')
 
     return redirect(url_for('dashboard_location'))
 

@@ -1,15 +1,15 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <h1>Dashboard <small> Welcome {{session.username}}</small></h1>
-  <a class="btn btn-success" href="/add_location"> Add Article</a>
+  <h1>Painel <small> Bem vindo(a) {{session.name}}</small></h1>
+  <a class="btn btn-success" href="/add_location">Adicionar Região</a>
   <hr>
   <table class="table table-striped">
     <tr>
       <th>ID</th>
-      <th>State</th>
-      <th>Author</th>
-      <th>Date</th>
+      <th>Cidade</th>
+      <th>Autor</th>
+      <th>Data</th>
       <th></th>
       <th></th>
     </tr>
@@ -19,11 +19,11 @@
         <td>{{location.state}}</td>
         <td>{{location.author}}</td>
         <td>{{location.create_date}}</td>
-        <td><a href="edit_location/{{location.id}}" class="btn btn-default pull-right">Edit</a></td>
+        <td><a href="edit_location/{{location.id}}" class="btn btn-default pull-right">Editar</a></td>
         <td>
           <form action="{{url_for('delete_location', id=location.id)}}" method="post">
             <input type="hidden" name="_method" value="DELETE">
-            <input type="submit" value="Delete" class="btn btn-danger">
+            <input type="submit" value="Deletar" class="btn btn-danger">
           </form>
         </td>
       </tr>
