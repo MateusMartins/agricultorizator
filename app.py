@@ -1,5 +1,3 @@
-import sys
-sys.dont_write_bytecode = True
 from flask import Flask, render_template, flash, redirect, url_for, session, request, logging
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
@@ -17,18 +15,42 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # init MYSQL
 mysql = MySQL(app)
 
-#Articles = Articles()
-
 # Index
 @app.route('/')
 def index():
     return render_template('home.html')
 
-# About
-@app.route('/about')
-def about():
-    return render_template('about.html')
+# locations
+@app.route('/locations')
+def locations():
+    # Create cursor
+    cur = mysql.connection.cursor()
 
+    # Get locations
+    result = cur.execute("SELECT * FROM locations")
+
+    locations = cur.fetchall()
+
+    if result > 0:
+        return render_template('locations.html', locations=locations)
+    else:
+        msg = 'No locations found'
+        return render_template('locations.html', msg=msg)
+    # Close connection
+    cur.close()
+
+#Single Location
+@app.route('/location/<string:id>/')
+def location(id):
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get article
+    _ = cur.execute("SELECT * FROM locations WHERE id = %s", [id])
+
+    location = cur.fetchone()
+
+    return render_template('location.html', location=location)
 
 # Articles
 @app.route('/articles')
@@ -274,6 +296,123 @@ def delete_article(id):
 
     return redirect(url_for('dashboard'))
 
+# Dashboard_location
+@app.route('/dashboard_location')
+@is_logged_in
+def dashboard_location():
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get locations
+    result = cur.execute("SELECT * FROM locations")
+
+    locations = cur.fetchall()
+
+    if result > 0:
+        return render_template('dashboard_location.html', locations=locations)
+    else:
+        msg = 'No locations Found'
+        return render_template('dashboard_location.html', msg=msg)
+    # Close connection
+    cur.close()
+
+# Location Form Class
+class LocationForm(Form):
+    state = StringField('Estado', [validators.Length(min=1, max=200)])
+    descricao = TextAreaField('Descrição', [validators.Length(min=30)])
+
+# Add Location
+@app.route('/add_location', methods=['GET', 'POST'])
+@is_logged_in
+def add_location():
+    form = LocationForm(request.form)
+    if request.method == 'POST' and form.validate():
+        state = form.state.data
+        descricao = form.descricao.data
+
+        # Create Cursor
+        cur = mysql.connection.cursor()
+
+        # Execute
+        cur.execute("INSERT INTO locations(state, descricao, author) VALUES(%s, %s, %s)",(state, descricao, session['username']))
+
+        # Commit to DB
+        mysql.connection.commit()
+
+        #Close connection
+        cur.close()
+
+        flash('Location Created', 'success')
+
+        return redirect(url_for('dashboard_location'))
+
+    return render_template('add_location.html', form=form)
+
+
+# Edit Location
+@app.route('/edit_location/<string:id>', methods=['GET', 'POST'])
+@is_logged_in
+def edit_location(id):
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get location by id
+    _ = cur.execute("SELECT * FROM locations WHERE id = %s", [id])
+
+    location = cur.fetchone()
+    cur.close()
+    # Get form
+    form = LocationForm(request.form)
+
+    # Populate location form fields
+    form.state.data = location['state']
+    form.descricao.data = location['descricao']
+
+    if request.method == 'POST' and form.validate():
+        state = request.form['state']
+        descricao = request.form['descricao']
+
+        # Create Cursor
+        cur = mysql.connection.cursor()
+        app.logger.info(state)
+        # Execute
+        cur.execute ("UPDATE locations SET state=%s, descricao=%s WHERE id=%s",(state, descricao, id))
+        # Commit to DB
+        mysql.connection.commit()
+
+        #Close connection
+        cur.close()
+
+        flash('Location Updated', 'success')
+
+        return redirect(url_for('dashboard'))
+
+    return render_template('edit_location.html', form=form)
+
+# Delete Location
+@app.route('/delete_location/<string:id>', methods=['POST'])
+@is_logged_in
+def delete_location(id):
+    
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Execute
+    cur.execute("DELETE FROM location WHERE id = %s", [id])
+
+    # Commit to DB
+    mysql.connection.commit()
+
+    #Close connection
+    cur.close()
+
+    flash('Location Deleted', 'success')
+
+    return redirect(url_for('dashboard_location'))
+
+
 if __name__ == '__main__':
+    import sys
+    sys.dont_write_bytecode = True
     app.secret_key='secret123'
     app.run(debug=True)
