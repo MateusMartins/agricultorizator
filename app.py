@@ -38,7 +38,7 @@ def index():
     if len(result) > 0:
         return render_template('home.html', prcp=json.dumps(prcp), datas=json.dumps(data))
     else:
-        msg = 'Nenhuma região cadastrada'
+        msg = 'Não contém dados para exibir o gráfico de precipitação'
         return render_template('home.html', msg=msg)
     # Close connection
     cur.close()
@@ -69,11 +69,31 @@ def location(id):
     cur = mysql.connection.cursor()
 
     # Get location
-    _ = cur.execute("SELECT * FROM locations WHERE id = %s", [id])
+    cur.execute("SELECT * FROM locations WHERE id = %s", [id])
 
-    location = cur.fetchone()
+    region = cur.fetchone()
 
-    return render_template('location.html', location=location)
+    cur.execute("select mdct, sum(prcp) as prcp from agua where wsnm = '{}' group by mdct".format(region['state']))
+
+    locations = cur.fetchall()
+
+    result = [[element['mdct'], element['prcp']] for element in locations]
+
+    data = []
+    prcp = []
+
+    for x, y in result:
+        data.append(x)
+        prcp.append(float(y))
+
+    if len(result) > 0:
+        return render_template('location.html', prcp=json.dumps(prcp), datas=json.dumps(data), region=region)
+    else:
+        msg = 'Não contém dados para exibir o gráfico de precipitação'
+        return render_template('home.html', msg=msg)
+
+    # Close connection
+    cur.close()
 
 # Register Form Class
 class RegisterForm(Form):

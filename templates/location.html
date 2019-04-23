@@ -1,10 +1,48 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <h1>{{location.title}}</h1>
-  <small>Escrito por {{location.author}} em {{location.create_date}}</small>
+  <h1>{{region.state}}</h1>
+  <small>Criado por {{region.author}} em {{region.create_date}}</small>
   <hr>
-  <div>
-    {{location.descricao | safe}}
-  </div>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+  <script language="javascript">
+      var $container = $('<div align="center">').appendTo(document.body);
+
+      window.chart = new Highcharts.Chart({
+          chart: {
+              type: 'area',
+              renderTo: $container[0],
+              height: 500,
+              width: 1150,
+              zoomType: 'x',
+              panning: true,
+              panKey: 'shift',
+              scrollablePlotArea: {
+                  minWidth: 600
+              }
+          },
+          xAxis: {
+              categories: {{ datas | safe }}
+          },
+          title: {
+              text: 'Precipitação ao longo do tempo em {{ region.state | safe}}'
+          },
+          yAxis: {
+              title: {
+                  text: 'Qtd precipitação'
+              }
+          },
+          series: [{
+              name: 'precipitação',
+              data: {{ prcp | safe }},
+              lineColor: Highcharts.getOptions().colors[4],
+              color: Highcharts.getOptions().colors[0],
+              fillOpacity: 0.0
+          }]
+      });
+  </script>
 {% endblock %}
