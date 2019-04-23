@@ -1,6 +1,6 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, request, logging
 from flask_mysqldb import MySQL
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
 from functools import wraps
 import json
@@ -42,8 +42,6 @@ def index():
         return render_template('home.html', msg=msg)
     # Close connection
     cur.close()
-
-    
 
 # locations
 @app.route('/locations')
@@ -198,23 +196,28 @@ def dashboard_location():
 
 # Location Form Class
 class LocationForm(Form):
-    state = StringField('Região', [validators.Length(min=1, max=200)])
-    descricao = TextAreaField('Descrição', [validators.Length(min=30)])
+    #state = StringField('Região', [validators.Length(min=1, max=200)])
+    state = SelectField('Regiões', coerce=str)
+    #descricao = TextAreaField('Descrição', [validators.Length(min=30)])
 
 # Add Location
 @app.route('/add_location', methods=['GET', 'POST'])
 @is_logged_in
 def add_location():
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get locations
+    cur.execute("select wsnm from agua group by wsnm")
+    locations = cur.fetchall()
+
     form = LocationForm(request.form)
+    form.state.choices = [(key['wsnm'], key['wsnm']) for key in locations]
     if request.method == 'POST' and form.validate():
         state = form.state.data
-        descricao = form.descricao.data
-
-        # Create Cursor
-        cur = mysql.connection.cursor()
 
         # Execute
-        cur.execute("INSERT INTO locations(state, descricao, author) VALUES(%s, %s, %s)",(state, descricao, session['username']))
+        cur.execute("INSERT INTO locations(state, descricao, author) VALUES(%s, %s, %s)",(state, 'teste', session['username']))
 
         # Commit to DB
         mysql.connection.commit()
@@ -240,23 +243,25 @@ def edit_location(id):
     _ = cur.execute("SELECT * FROM locations WHERE id = %s", [id])
 
     location = cur.fetchone()
-    cur.close()
-    # Get form
+
+    # Get locations
+    cur.execute("select wsnm from agua group by wsnm")
+    locations = cur.fetchall()
+
     form = LocationForm(request.form)
+    form.state.choices = [(key['wsnm'], key['wsnm']) for key in locations]
 
     # Populate location form fields
     form.state.data = location['state']
-    form.descricao.data = location['descricao']
 
     if request.method == 'POST' and form.validate():
         state = request.form['state']
-        descricao = request.form['descricao']
 
         # Create Cursor
         cur = mysql.connection.cursor()
         app.logger.info(state)
         # Execute
-        cur.execute ("UPDATE locations SET state=%s, descricao=%s WHERE id=%s",(state, descricao, id))
+        cur.execute ("UPDATE locations SET state=%s, descricao=%s WHERE id=%s",(state, 'teste', id))
         # Commit to DB
         mysql.connection.commit()
 
