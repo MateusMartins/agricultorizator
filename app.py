@@ -3,6 +3,7 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
+import json
 
 app = Flask(__name__)
 
@@ -18,7 +19,31 @@ mysql = MySQL(app)
 # Index
 @app.route('/')
 def index():
-    return render_template('home.html')
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    cur.execute("select mdct, sum(prcp) as prcp from agua group by mdct")
+
+    locations = cur.fetchall()
+    
+    result = [[element['mdct'], element['prcp']] for element in locations]
+
+    data = []
+    prcp = []
+
+    for x, y in result:
+        data.append(x)
+        prcp.append(float(y))
+
+    if len(result) > 0:
+        return render_template('home.html', prcp=json.dumps(prcp), datas=json.dumps(data))
+    else:
+        msg = 'Nenhuma região cadastrada'
+        return render_template('home.html', msg=msg)
+    # Close connection
+    cur.close()
+
+    
 
 # locations
 @app.route('/locations')

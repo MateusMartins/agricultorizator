@@ -1,80 +1,55 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <div class="jumbotron text-center">
-    <h1>Agricultorizator</h1>
-    <p class="lead">Este site tem como objetivo apresentar informações para apoiar o agricultor familiar.<br><br>Ao analisar a situação atual do agricultor familiar foram identificadas algumas estratégias para modernizar a sua propriedade como: modernização da área utilizada, aumento da produtividade, operação de campo como diferencial e a tecnologia suportando o negócio.</p>
-    {% if session.logged_in == NULL %}
-      <a href="/register" class="btn btn-primary btn-lg">Registre-se</a>
-      <a href="/login" class="btn btn-success btn-lg">Entre</a>
-    {% endif %}
-  </div>
-  
-  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/modules/exporting.js"></script>
-  <script src="https://code.highcharts.com/modules/export-data.js"></script>
-  
-  <script language="javascript">
-    $.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/usdeur.json',
-        function (data) {
-            Highcharts.chart('container', {
-                chart: {
-                    zoomType: 'x'
-                },
+    <div class="jumbotron text-center">
+        <h1>Agricultorizator</h1>
+        <p class="lead">Este site tem como objetivo apresentar informações para apoiar o agricultor familiar.<br><br>Ao analisar a situação atual do agricultor familiar foram identificadas algumas estratégias para modernizar a sua propriedade como: modernização da área utilizada, aumento da produtividade, operação de campo como diferencial e a tecnologia suportando o negócio.</p>
+        {% if session.logged_in == NULL %}
+        <a href="/register" class="btn btn-primary btn-lg">Registre-se</a>
+        <a href="/login" class="btn btn-success btn-lg">Entre</a>
+        {% endif %}
+    </div>
+    
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <script language="javascript">
+        var $container = $('<div align="center">').appendTo(document.body);
+
+        window.chart = new Highcharts.Chart({
+            chart: {
+                type: 'area',
+                renderTo: $container[0],
+                height: 500,
+                width: 1150,
+                zoomType: 'x',
+                panning: true,
+                panKey: 'shift',
+                scrollablePlotArea: {
+                    minWidth: 600
+                }
+            },
+            xAxis: {
+                categories: {{ datas | safe }}
+            },
+            title: {
+                text: 'Precipitação ao longo do tempo'
+            },
+            yAxis: {
                 title: {
-                    text: 'USD to EUR exchange rate over time'
-                },
-                subtitle: {
-                    text: document.ontouchstart === undefined ?
-                        'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
-                },
-                xAxis: {
-                    type: 'datetime'
-                },
-                yAxis: {
-                    title: {
-                        text: 'Exchange rate'
-                    }
-                },
-                legend: {
-                    enabled: false
-                },
-                plotOptions: {
-                    area: {
-                        fillColor: {
-                            linearGradient: {
-                                x1: 0,
-                                y1: 0,
-                                x2: 0,
-                                y2: 1
-                            },
-                            stops: [
-                                [0, Highcharts.getOptions().colors[0]],
-                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
-                            ]
-                        },
-                        marker: {
-                            radius: 2
-                        },
-                        lineWidth: 1,
-                        states: {
-                            hover: {
-                                lineWidth: 1
-                            }
-                        },
-                        threshold: null
-                    }
-                },
-                series: [{
-                    type: 'area',
-                    name: 'USD to EUR',
-                    data: data
-                }]
-            });
-        }
-    );
-  </script>
-  <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                    text: 'Qtd precipitação'
+                }
+            },
+            series: [{
+                name: 'precipitação',
+                data: {{ prcp | safe }},
+                lineColor: Highcharts.getOptions().colors[4],
+                color: Highcharts.getOptions().colors[0],
+                fillOpacity: 0.0
+            }]
+        });
+    </script>
 
 {% endblock %}
